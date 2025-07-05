@@ -1,0 +1,378 @@
+#include<iostream>
+#include<sstream>
+#include<string>
+#include<chrono>
+#include<thread>
+#include<atomic>
+#include<cmath>
+#include<vector>
+#include<map>
+#include<algorithm>
+#include<ctime>
+#include<iomanip>
+#include<stack>
+#include<unordered_map>
+#include<fstream>
+#include<set>
+#define RED     "\033[1;31m"
+#define BLUE    "\033[1;34m"
+#define RESET   "\033[0m"
+using namespace std;
+
+char board[9] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+void print_board(){
+      cout<<"+------------------+\n";
+
+      for(int i = 0; i<9; i++){
+            if(board[i] == 'X')
+                  cout<<"  "<<RED<<board[i]<<RESET<<" | ";
+
+            else if(board[i] == 'O')
+                  cout<<"  "<<BLUE<<board[i]<<RESET<<" | ";
+
+            else cout<<"  "<<board[i]<<" | ";           
+
+            if((i+1) % 3 == 0)
+                  cout<<"\n"; 
+
+            if((i+1)%3 == 0)
+                  cout<<"+------------------+\n";
+            }
+            cout<<"\n";
+      }
+
+bool checkWinner(char player){
+      int wins[8][3] = { {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, 
+                          {0, 3, 6}, {1, 4, 7}, {2, 5, 8},
+                          {2, 4, 6}, {0, 4, 8} };
+
+       for(int i = 0; i<8; i++){
+             if(board[wins[i][0]] == player && board[wins[i][1]] == player && board[wins[i][2]] ==                           player)
+                   return true;
+             }                        
+       return false;
+       }
+
+bool checkDraw(){
+      for(int i = 0; i<9; i++){
+            if(board[i] != 'X' && board[i] !=  'O')
+                  return false;
+            }               
+      return true;      
+      }
+
+void boardReset(){
+      for(int i = 0; i<9; i++){
+            board[i] = i + '1';            
+            }
+      }
+
+void save_progress(char player, int count_x, int count_o, string& name_move, string& nameX,             string& nameO){
+      ofstream file ("TicTacToe.txt");
+      if(file.is_open()){
+            for(int i = 0; i<9; i++){
+                  file<<board[i]<<" ";
+                  if((i+1) % 3 == 0) file<<"\n";
+                  }                              
+            file<<player<<"\n";
+            file<<count_x<<"\n";
+            file<<count_o<<"\n";
+            file<< name_move<<"\n";
+            file<<nameX <<"\n";
+            file<<nameO <<"\n";
+            file.close();
+            }
+      }            
+
+bool load_progress(char& player, int& count_x, int& count_o, string& name_move, string&       nameX, string& nameO){
+      ifstream file ("TicTacToe.txt");
+      if(!file.is_open()) return false;
+
+      string flag;
+      file>>flag;
+      if(flag == "NEW_GAME") return false;
+
+      file.putback(flag[0]);
+      for(int i = 0; i<9; i++){
+            file>>board[i];
+            }
+
+      file>>player;
+      file>>count_x;
+      file>>count_o;
+      getline(file>> ws, name_move);
+      getline(file>> ws, nameX);                  
+      getline(file>> ws, nameO);                              
+      file.close();
+      return true;   
+      }
+
+void reset_progress(){
+      ofstream file ("TicTacToe.txt");
+      if(file.is_open()){
+            file<<"NEW_GAME";
+
+            file.close();
+            }
+      }
+
+struct player_data {
+      string name;
+      int win;
+      };
+vector<player_data> leaderboard;
+
+void save_leaderboard(){
+      ofstream file ("leaderboard.txt");
+      if(file.is_open()){
+            for(auto& x : leaderboard){
+                  file << x.name <<" "<<x.win<<endl;
+                  }
+                  file.close();
+            }      
+      }
+
+bool load_leaderboard(){
+      ifstream file ("leaderboard.txt");
+      if(file.is_open()){
+            string name;
+            int win;
+            while(file>>name>>win){
+                  leaderboard.push_back({name, win});
+                  }                 
+                  file.close();
+                  return true;
+             }           
+
+            else return false;
+      }
+
+void reset_leaderboard(){
+      ofstream file ("leaderboard.txt", ios::trunc);
+      if(file.is_open()){
+            file<< " ";
+
+            file.close();
+            }
+            leaderboard.clear();      
+      }
+
+int main(){
+
+      char player = 'X';
+      int move, count_x = 0, count_o = 0, option, roll;   
+      string name_move, nameX, nameO;   
+
+      bool loaded = load_progress(player, count_x, count_o, name_move, nameX, nameO);
+      if(!loaded){
+            player = 'X';
+            count_x = 0;
+            count_o = 0;
+
+            srand(time(0));
+            int dice = (rand() % 6) + 1;
+
+            cout<<"=====WELCOME To TICTACTOE=====\n";
+            cout<<"Enter Your Nickname(player 1): ";
+            cin>>nameX;
+            cout<<"Enter Your Nickname(player 2): ";
+            cin>>nameO;
+            cout<<"\n";                  
+            cout<<"If the dice show number 1-3: Player(X) first\n";
+            cout<<"if the dice show number 4-6: Player(O) first\n";           
+            cout<<"Enter 1 to roll the dice: "; 
+            cin>>roll;
+
+             while(roll != 1){
+                  cout<<"Please enter 1\n";
+                  cout<<"Enter 1 to roll the dice: "; 
+                  cin>>roll;
+                  }
+
+            cout<<"Dice: "<<dice<<endl;      
+
+            if(dice <= 3) {
+                  player = 'X';
+                  name_move = nameX;
+                  }
+            else {
+                  player = 'O';            
+                  name_move = nameO;
+                  }           
+            }
+
+            else{
+                  cout<<"Loaded Progress Successfuly\n\n";
+                  }
+
+      while(true){                        
+            cout<<"1. Play\n";
+            cout<<"2. Reset Progress\n";
+            cout<<"3. Show Leaderboard\n";
+            cout<<"4. Quit\n";
+           cout<<"Enter 1-4: ";
+            if(!(cin>>option)){
+                  cout<<"Invalid Move\n";
+                  cin.clear();
+                  cin.ignore(1000, '\n');
+                  continue;                 
+                   }
+             cout<<endl;
+
+            if(option == 1){                 
+
+                  print_board();
+                  cout<<RED<<nameX<<"(X): "<<count_x<<RESET<<endl;
+                  cout<<BLUE<<nameO<<"(O): "<<count_o<<RESET<<endl;
+
+                  while(true){
+                        if(name_move == nameX){
+                              cout<<"\n"<<RED<<name_move<<" turn to move (" <<player<<"): "
+                              <<RESET<<"\n";
+                              }
+                         else if(name_move == nameO){
+                              cout<<"\n"<<BLUE<<name_move<<" turn to move (" <<player<<"): "
+                              <<RESET<<"\n";                               
+                               }     
+
+                        if(!(cin>>move)){
+                              cout<<"Invalid Move\n";
+                              cin.clear();
+                              cin.ignore(1000, '\n');
+                              continue;                 
+                              }
+
+                        move--;
+                        if(move < 0 || move > 8 || board[move] == 'X' || board[move] == 'O'){
+                              cout<<"Invalid Move\n";
+                              continue;                 
+                              }
+
+                        board[move]  = player;
+                        print_board();
+
+                        if(checkWinner(player)){                              
+                              if(player == 'X') {
+                                    count_x++;
+                                    cout<<RED<<name_move<<" ("<<player<<")"<<
+                                    " Won the Game!!!"<<RESET<<"\n";
+                                    }
+                              else if(player == 'O') {
+                                    count_o++;
+                                    cout<<BLUE<<name_move<<" ("<<player<<")"<<
+                                    " Won the Game!!!"<<RESET<<"\n";
+                                    }                                    
+                              save_progress(player, count_x, count_o, name_move, nameX, nameO);
+
+                              boardReset();
+                              player = (player == 'X') ? 'O' : 'X';                              
+                              name_move = (name_move == nameX) ? nameO : nameX;
+
+                              break;
+                              }
+
+                        if(checkDraw()){
+                              cout<<"Draw!\n";                                                                                               
+                              save_progress(player, count_x, count_o, name_move, nameX, nameO);
+
+                              boardReset();
+                              player = (player == 'X') ? 'O' : 'X';                              
+                              name_move = (name_move == nameX) ? nameO : nameX;
+
+                              break;
+                              }                            
+
+                        player = (player == 'X') ? 'O' : 'X';      
+                        name_move = (name_move == nameX) ? nameO : nameX;
+                  }              
+             }   
+             else if(option == 2){
+                   reset_progress();
+                   reset_leaderboard();
+                   cout<<"Reset Successful\n";
+
+                        boardReset();
+                        player = 'X';
+                        count_x = 0;
+                        count_o = 0;
+
+                        srand(time(0));
+                        int dice = (rand() % 6) + 1;
+
+                        cout<<"=====WELCOME To TICTACTOE=====\n";
+
+                        cout<<"Enter Your Nickname(player 1): ";
+                        cin>>nameX;
+                        cout<<"Enter Your Nickname(player 2): ";
+                        cin>>nameO;
+                        cout<<"\n";                  
+
+                        cout<<"If the dice show number 1-3: Player(X) first\n";
+                        cout<<"if the dice show number 4-6: Player(O) first\n";           
+                        cout<<"Enter 1 to roll the dice: "; 
+                        cin>>roll;
+
+                         while(roll != 1){
+                              cout<<"Please enter 1\n";
+                              cout<<"Enter 1 to roll the dice: "; 
+                              cin>>roll;
+                              }
+
+                        cout<<"Dice: "<<dice<<endl;      
+
+                        if(dice <= 3) {
+                              player = 'X';
+                              name_move = nameX;
+                              }
+                        else {
+                              player = 'O';                       
+                              name_move =  nameO;
+                              }
+                  }            
+
+             else if(option == 3){
+                   if(load_leaderboard()){
+                         cout<<"Load Successful\n";
+                         cout<<"====Leaderboard====\n";
+                         int p = 1;
+                         for(auto& i : leaderboard){
+                               cout<<p <<". "<<i.name<<": "<<i.win<<"\n";
+                               p++;
+                               }
+                               cout<<"================\n";
+                         }   
+                         else cout<<"Leaderboard Empty\n";                
+                   }
+
+             else if(option == 4){
+                  leaderboard.push_back({nameX, count_x});
+                  leaderboard.push_back({nameO, count_o});
+
+                  sort(leaderboard.begin(), leaderboard.end(), 
+                  [] (const player_data& a, player_data& b){
+                         return a.win > b.win;
+                         });                                                                                                                                
+
+                  vector<player_data> leaderboard_new;
+                  set<string> added_name;
+                  for(auto& y : leaderboard){
+                        if(added_name.find(y.name) == added_name.end()){
+                              leaderboard_new.push_back(y);
+
+                              added_name.insert(y.name);
+                              }
+                        }
+                  leaderboard.clear();
+
+                  leaderboard = leaderboard_new;
+                  save_leaderboard();
+
+                   save_progress(player, count_x, count_o, name_move, nameX, nameO);
+                   return 0;
+                   }
+      }
+            return 0;
+      }
+
+
